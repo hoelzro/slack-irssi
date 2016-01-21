@@ -186,6 +186,14 @@ sub get_im_history {
   my ( $channel_name, $count ) = @_;
 
   return; # XXX NYI
+
+  # XXX find direct message ID (D...) given username ($channel_name)
+
+  my $resp = api_call(GET => 'im.history',
+    channel => $user_id,
+    count   => $count);
+
+  return $resp->{'ok'} ? $resp->{'messages'} : undef;
 }
 
 sub get_chanlog {
