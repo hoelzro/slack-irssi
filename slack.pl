@@ -56,7 +56,6 @@ our %IRSSI = (
 
 my $baseurl = "https://slack.com/api/";
 my $svrre = qr/^\w+\.irc\.slack\.com/;
-my $lastupdate = 0;
 
 sub init {
   my @servers = Irssi::servers();
