@@ -88,14 +88,14 @@ sub api_call {
 }
 
 sub sig_server_conn {
-  my ($server) = @_;
+  my ( $server ) = @_;
 
   return unless is_slack_server($server);
   Irssi::signal_add('channel joined', 'get_chanlog');
 }
 
 sub sig_server_disc {
-  my ($server) = @_;
+  my ( $server ) = @_;
 
   return unless is_slack_server($server);
 
@@ -130,7 +130,7 @@ sub get_chanid {
   state $last_channels_update = 0;
   state $last_groups_update = 0;
 
-  my ($channame, $is_private, $force) = @_;
+  my ( $channame, $is_private, $force ) = @_;
 
   my $cache_ref       = \$channel_cache;
   my $last_update_ref = \$last_channels_update;
@@ -161,7 +161,7 @@ sub get_chanid {
 }
 
 sub get_chanlog {
-  my ($channel) = @_;
+  my ( $channel ) = @_;
 
   return unless is_slack_server($channel->{'server'});
 
@@ -203,7 +203,7 @@ sub get_chanlog {
 sub update_slack_mark {
   state %last_mark_updated;
 
-  my ($window) = @_;
+  my ( $window ) = @_;
 
   return unless($window->{'active'}->{'type'} eq 'CHANNEL' &&
                  is_slack_server($window->{'active_server'}));
@@ -219,7 +219,7 @@ sub update_slack_mark {
   }
 
   # Only update the Slack mark if the most recent visible line is newer.
-  my($channel) = $window->{'active'}->{'name'} =~ /^#(.*)/;
+  my ( $channel ) = $window->{'active'}->{'name'} =~ /^#(.*)/;
   if($last_mark_updated{$channel} < $line->{'info'}->{'time'}) {
     api_call(GET => 'channels.mark'
       channel => get_chanid($channel),
@@ -229,12 +229,12 @@ sub update_slack_mark {
 }
 
 sub sig_window_changed {
-  my ($new_window) = @_;
+  my ( $new_window ) = @_;
   update_slack_mark($new_window);
 }
 
 sub sig_message_public {
-  my ($server, $msg, $nick, $address, $target) = @_;
+  my ( $server, $msg, $nick, $address, $target ) = @_;
 
   my $window = Irssi::active_win();
   if($window->{'active'}->{'type'} eq 'CHANNEL' &&
@@ -245,9 +245,9 @@ sub sig_message_public {
 }
 
 sub cmd_mark {
-  my ($mark_windows) = @_;
+  my ( $mark_windows ) = @_;
 
-  my(@windows) = Irssi::windows();
+  my ( @windows ) = Irssi::windows();
   my @mark_windows;
   foreach my $name (split(/\s+/, $mark_windows)) {
     if($name eq 'ACTIVE') {
