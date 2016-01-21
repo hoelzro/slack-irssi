@@ -32,6 +32,7 @@
 #
 
 use 5.14;
+use warnings;
 
 use Irssi;
 use Irssi::TextUI;
