@@ -16,7 +16,7 @@
 # on the World Wide Web: <http://www.gnu.org/licenses/gpl.html/>
 #
 # slack irssi plugin
-# 
+#
 # A plugin to add functionality when dealing with Slack.
 # See http://slack.com/ for details on what Slack is.
 #
@@ -29,7 +29,7 @@
 #
 # /set slack_loglines <integer>
 #  - the number of lines to grab from channel history
-# 
+#
 
 use 5.14;
 
@@ -157,7 +157,7 @@ sub get_chanid {
   }
 
   return ${$$cache_ref}{$channame};
-}    
+}
 
 sub get_chanlog {
   my ($channel) = @_;
