@@ -54,6 +54,11 @@ our %IRSSI = (
 
 my $baseurl = "https://slack.com/api/";
 
+my $ua = LWP::UserAgent->new;
+$ua->agent("$IRSSI{name} irssi/$VERSION");
+$ua->timeout(3);
+$ua->env_proxy;
+
 sub is_slack_server {
     my ( $server ) = @_;
 
@@ -65,10 +70,6 @@ sub api_call {
 
   my $resp;
   my $payload;
-  my $ua = LWP::UserAgent->new;
-  $ua->agent("$IRSSI{name} irssi/$VERSION");
-  $ua->timeout(3);
-  $ua->env_proxy;
 
   my $token = Irssi::settings_get_str($IRSSI{'name'} . '_token');
   $url->query_form($url->query_form, 'token' => $token);
