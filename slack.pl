@@ -247,21 +247,20 @@ sub sig_message_public {
 sub cmd_mark {
   my ( $mark_windows ) = @_;
 
-  my ( @windows ) = Irssi::windows();
-  my @mark_windows;
-  foreach my $name (split(/\s+/, $mark_windows)) {
-    if($name eq 'ACTIVE') {
-      push(@mark_windows, Irssi::active_win());
-      next;
-    }
+  my %mark_me = map { $_ => undef } split /\s+/ $mark_windows;
 
-    foreach my $window (@windows) {
-      if($window->{'name'} eq $name) {
-        push(@mark_windows, $window);
-      }
-    }
+  if(exists $mark_me{'ACTIVE'}) {
+    $mark_me{'ACTIVE'} = Irssi::active_win();
   }
-  foreach my $window (@mark_windows) {
+
+  for my $window (Irssi::windows()) {
+    my $name = $window->{'name'};
+    next unless exists $mark_me{$name};
+
+    $mark_me{$name} = $window;
+  }
+
+  for my $window (grep { defined() } values %mark_me) {
     update_slack_mark($window);
   }
 }
