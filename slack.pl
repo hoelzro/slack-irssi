@@ -162,6 +162,32 @@ sub get_chanid {
   return ${$$cache_ref}{$channame};
 }
 
+sub get_channel_history {
+  my ( $channel_name, $count ) = @_;
+
+  my $resp = api_call(GET => 'channels.history'
+    channel => get_chanid($channel_name, 0, 0),
+    count   => $count);
+
+  return $resp->{'ok'} ? $resp->{'messages'} : undef;
+}
+
+sub get_group_history {
+  my ( $channel_name, $count ) = @_;
+
+  my $resp = api_call(GET => 'groups.history',
+    channel => get_chanid($channel_name, 1, 0),
+    count   => $count);
+
+  return $resp->{'ok'} ? $resp->{'messages'} : undef;
+}
+
+sub get_im_history {
+  my ( $channel_name, $count ) = @_;
+
+  return; # XXX NYI
+}
+
 sub get_chanlog {
   my ( $channel ) = @_;
 
@@ -172,34 +198,33 @@ sub get_chanlog {
   my $count        = Irssi::settings_get_int($IRSSI{'name'} . '_loglines');
   my $channel_name = $channel->{'name'} =~ s/^#//r;
 
-  my $resp = api_call(GET => 'channels.history'
-    channel => get_chanid($channel_name, 0, 0),
-    count   => $count);
+  my $messages;
 
-  if(!$resp->{'ok'}) {
-    # First try failed, so maybe this chan is actually a private group
-    Irssi::print("$channel_name appears to be a private group");
-    $resp = api_call(GET => 'groups.history',
-      channel => $groupid,
-      count   => $count);
+  if(is_channel($channel_name)) {
+    $messages = get_channel_history($channel_name, $count);
+  } elsif(is_private_group($channel_name)) {
+    $messages = get_group_history($channel_name, $count);
+  } else { # it's an IM
+    $messages = get_im_history($channel_name, $count);
   }
 
-  if($resp->{'ok'}) {
-    my $msgs = $resp->{'messages'};
-    foreach my $m (reverse(@{$msgs})) {
-      if($m->{'type'} eq 'message') {
-        if($m->{'subtype'} eq 'message_changed') {
-          $m->{'text'} = $m->{'message'}{'text'};
-          $m->{'user'} = $m->{'message'}{'user'};
-        }
-        elsif($m->{'subtype'}) {
-          next;
-        }
-        my $ts = strftime('%H:%M', localtime $m->{'ts'});
-        $channel->printformat(MSGLEVEL_PUBLIC, 'slackmsg', $users->{$m->{'user'}}, $m->{'text'}, '+', $ts);
-      }
+  return unless $messages;
+
+  for my $message (reverse @$messages) {
+    next unless $message->{'type'} eq 'message';
+
+    my ( $text, $user );
+
+    if($m->{'subtype'} eq 'message_changed') {
+      ( $text, $user ) = @{ $message->{'message'} }{qw/text user/};
+    } elsif(!$m->{'subtype'}) {
+      ( $text, $user ) = @{$message}{qw/text user/};
     }
-  }
+
+    $user = $users->{$user};
+
+    my $ts = strftime('%H:%M', localtime $message->{'ts'});
+    $channel->printformat(MSGLEVEL_PUBLIC, 'slackmsg', $user, $text, '+', $ts);
 }
 
 sub update_slack_mark {
