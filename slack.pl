@@ -283,3 +283,5 @@ Irssi::command_bind('mark', 'cmd_mark');
 # settings
 Irssi::settings_add_str('misc', $IRSSI{'name'} . '_token', '');
 Irssi::settings_add_int('misc', $IRSSI{'name'} . '_loglines', 20);
+
+# vim: sts=2 sw=2
