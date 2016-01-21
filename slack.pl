@@ -124,36 +124,40 @@ sub get_users {
   return $users_cache;
 }
 
-my %CHANNELS;
-my $LAST_CHANNELS_UPDATE;
-sub chan_joined {
-  my ($channel) = @_;
-
-  return unless is_slack_server($channel->{'server'});
-
-  $LAST_CHANNELS_UPDATE = 0;
-}
 sub get_chanid {
+  state $channel_cache;
+  state $groups_cache;
+  state $last_channels_update = 0;
+  state $last_groups_update = 0;
+
   my ($channame, $is_private, $force) = @_;
 
-  my $ressource = "channels";
-  if ($is_private) {
-    $ressource = "groups";
+  my $cache_ref       = \$channel_cache;
+  my $last_update_ref = \$last_channels_update;
+
+  my $ressource = 'channels';
+  if($is_private) {
+    $ressource       = 'groups';
+    $cache_ref       = \$groups_cache;
+    $last_update_ref = \$last_groups_update;
   }
 
-  if ($force || (($LAST_CHANNELS_UPDATE + 4 * 60 * 60) < time())) {
+  if($force || !exists(${$$cache_ref}{$channame}) || (($$last_update_ref + 4 * 60 * 60) < time())) {
     my $resp = api_call(GET => "$ressource.list",
       exclude_archived => 1);
 
-    if ($resp->{ok}) {
-      foreach my $c (@{$resp->{$ressource}}) {
-        $CHANNELS{$c->{name}} = $c->{id};
+    if($resp->{'ok'}) {
+      my $cache = {};
+      foreach my $channel (@{ $resp->{$ressource} }) {
+        $cache->{ $channel->{'name'} } = $channel->{'id'};
       }
-      $LAST_CHANNELS_UPDATE = time();
+      $$last_update_ref = time();
+
+      $$ccache_ref = $cache;
     }
   }
 
-  return $CHANNELS{$channame};
+  return ${$$cache_ref}{$channame};
 }    
 
 sub get_chanlog {
@@ -268,7 +272,6 @@ Irssi::theme_register(['slackmsg', '{timestamp $3} {pubmsgnick $2 {pubnick $0}}$
 Irssi::signal_add('server connected', 'sig_server_conn');
 Irssi::signal_add('server disconnected', 'sig_server_disc');
 Irssi::signal_add('setup changed', 'get_users');
-Irssi::signal_add('channel joined', 'chan_joined');
 Irssi::signal_add('window changed', 'sig_window_changed');
 Irssi::signal_add('message public', 'sig_message_public');
 
