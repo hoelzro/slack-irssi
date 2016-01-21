@@ -316,4 +316,13 @@ Irssi::command_bind('mark', 'cmd_mark');
 Irssi::settings_add_str('misc', $IRSSI{'name'} . '_token', '');
 Irssi::settings_add_int('misc', $IRSSI{'name'} . '_loglines', 20);
 
+# don't display history messages that I've already received (where shall I store this info? logs?)
+# expand U123456 etc in history messages (https://api.slack.com/docs/formatting)
+# https://github.com/tedski/slack-irssi/issues/5
+# https://github.com/tedski/slack-irssi/pull/15
+# https://github.com/tedski/slack-irssi/issues/16
+# ditch slackmsg theme?
+# update changed date in %IRSSI
+# bump VERSION
+
 # vim: sts=2 sw=2
