@@ -66,21 +66,20 @@ sub is_slack_server {
 }
 
 sub api_call {
-  my ($method, $url) = @_;
+  my ( $http_method, $api_method, %params ) = @_;
 
-  my $resp;
-  my $payload;
-
+  my $uri = URI->new($baseurl . $api_method);
   my $token = Irssi::settings_get_str($IRSSI{'name'} . '_token');
-  $url->query_form($url->query_form, 'token' => $token);
+  $url->query_form($url->query_form, %params, token => $token);
 
-  $resp = $ua->$method($url);
-  $payload = from_json($resp->decoded_content);
+  my $req = HTTP::Request->new($http_method, $url);
+  my $resp = $ua->request($req);
+  my $payload = from_json($resp->decoded_content);
   if ($resp->is_success) {
     if (! $payload->{ok}) {
       Irssi::print("The Slack API returned the following error: $payload->{error}", MSGLEVEL_CLIENTERROR);
     } else {
-    return $payload;
+      return $payload;
     }
   } else {
     Irssi::print("Error calling the slack api: $resp->{code} $resp->{message}", MSGLEVEL_CLIENTERROR);
@@ -110,9 +109,7 @@ sub get_users {
   return unless Irssi::settings_get_str($IRSSI{'name'} . '_token');
 
   if (($LAST_USERS_UPDATE + 4 * 60 * 60) < time()) {
-    my $url = URI->new($baseurl . 'users.list');
-
-    my $resp = api_call('get', $url);
+    my $resp = api_call(GET => 'users.list');
 
     if ($resp->{ok}) {
       my $slack_users = $resp->{members};
@@ -142,10 +139,8 @@ sub get_chanid {
   }
 
   if ($force || (($LAST_CHANNELS_UPDATE + 4 * 60 * 60) < time())) {
-    my $url = URI->new($baseurl . $ressource . '.list');
-    $url->query_form('exclude_archived' => 1);
-
-    my $resp = api_call('get', $url);
+    my $resp = api_call(GET => "$ressource.list",
+      exclude_archived => 1);
 
     if ($resp->{ok}) {
       foreach my $c (@{$resp->{$ressource}}) {
@@ -167,20 +162,17 @@ sub get_chanlog {
 
   my $count = Irssi::settings_get_int($IRSSI{'name'} . '_loglines');
   $channel->{name} =~ s/^#//;
-  my $url = URI->new($baseurl . 'channels.history');
-  $url->query_form('channel' => get_chanid($channel->{name}, 0, 0),
-    'count' => $count);
 
-  my $resp = api_call('get', $url);
+  my $resp = api_call(GET => 'channels.history'
+    channel => get_chanid($channel->{'name'}, 0, 0),
+    count   => $count);
 
   if (!$resp->{ok}) {
     # First try failed, so maybe this chan is actually a private group
     Irssi::print($channel->{name}. " appears to be a private group");
-    $url = URI->new($baseurl . 'groups.history');
-    my $groupid = get_chanid($channel->{name}, 1, 1);
-    $url->query_form('channel' => $groupid,
-                     'count' => $count);
-    $resp = api_call('get', $url);
+    $resp = api_call(GET => 'groups.history',
+      channel => $groupid,
+      count   => $count);
   }
 
   if ($resp->{ok}) {
@@ -221,11 +213,9 @@ sub update_slack_mark {
   # Only update the Slack mark if the most recent visible line is newer.
   my($channel) = $window->{active}->{name} =~ /^#(.*)/;
   if ($LAST_MARK_UPDATED{$channel} < $line->{info}->{time}) {
-    my $url = URI->new($baseurl . 'channels.mark');
-    $url->query_form('channel' => get_chanid($channel),
-      'ts' => $line->{info}->{time});
-
-    api_call('get', $url);
+    api_call(GET => 'channels.mark'
+      channel => get_chanid($channel),
+      ts      => $line->{'info'}{'time'});
     $LAST_MARK_UPDATED{$channel} = $line->{info}->{time};
   }
 }
