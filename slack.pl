@@ -77,13 +77,13 @@ sub api_call {
   my $resp = $ua->request($req);
   my $payload = from_json($resp->decoded_content);
   if($resp->is_success) {
-    if(! $payload->{ok}) {
-      Irssi::print("The Slack API returned the following error: $payload->{error}", MSGLEVEL_CLIENTERROR);
+    if(! $payload->{'ok'}) {
+      Irssi::print("The Slack API returned the following error: $payload->{'error'}", MSGLEVEL_CLIENTERROR);
     } else {
       return $payload;
     }
   } else {
-    Irssi::print("Error calling the slack api: $resp->{code} $resp->{message}", MSGLEVEL_CLIENTERROR);
+    Irssi::print("Error calling the slack api: $resp->{'code'} $resp->{'message'}", MSGLEVEL_CLIENTERROR);
   }
 }
 
@@ -174,7 +174,7 @@ sub get_chanlog {
     channel => get_chanid($channel_name, 0, 0),
     count   => $count);
 
-  if(!$resp->{ok}) {
+  if(!$resp->{'ok'}) {
     # First try failed, so maybe this chan is actually a private group
     Irssi::print("$channel_name appears to be a private group");
     $resp = api_call(GET => 'groups.history',
@@ -182,18 +182,18 @@ sub get_chanlog {
       count   => $count);
   }
 
-  if($resp->{ok}) {
-    my $msgs = $resp->{messages};
+  if($resp->{'ok'}) {
+    my $msgs = $resp->{'messages'};
     foreach my $m (reverse(@{$msgs})) {
-      if($m->{type} eq 'message') {
-        if($m->{subtype} eq 'message_changed') {
-          $m->{text} = $m->{message}->{text};
-          $m->{user} = $m->{message}->{user};
+      if($m->{'type'} eq 'message') {
+        if($m->{'subtype'} eq 'message_changed') {
+          $m->{'text'} = $m->{'message'}->{'text'};
+          $m->{'user'} = $m->{'message'}->{'user'};
         }
-        elsif($m->{subtype}) {
+        elsif($m->{'subtype'}) {
           next;
         }
-        my $ts = strftime('%H:%M', localtime $m->{ts});
+        my $ts = strftime('%H:%M', localtime $m->{'ts'});
         $channel->printformat(MSGLEVEL_PUBLIC, 'slackmsg', $users->{$m->{'user'}}, $m->{'text'}, '+', $ts);
       }
     }
@@ -205,26 +205,26 @@ sub update_slack_mark {
 
   my ($window) = @_;
 
-  return unless($window->{active}->{type} eq 'CHANNEL' &&
+  return unless($window->{'active'}->{'type'} eq 'CHANNEL' &&
                  is_slack_server($window->{'active_server'}));
   return unless Irssi::settings_get_str($IRSSI{'name'} . '_token');
 
   # Leave $line set to the final visible line, not the one after.
   my $view = $window->view();
-  my $line = $view->{startline};
-  my $count = $view->get_line_cache($line)->{count};
-  while($count < $view->{height} && $line->next) {
+  my $line = $view->{'startline'};
+  my $count = $view->get_line_cache($line)->{'count'};
+  while($count < $view->{'height'} && $line->next) {
     $line = $line->next;
-    $count += $view->get_line_cache($line)->{count};
+    $count += $view->get_line_cache($line)->{'count'};
   }
 
   # Only update the Slack mark if the most recent visible line is newer.
-  my($channel) = $window->{active}->{name} =~ /^#(.*)/;
-  if($last_mark_updated{$channel} < $line->{info}->{time}) {
+  my($channel) = $window->{'active'}->{'name'} =~ /^#(.*)/;
+  if($last_mark_updated{$channel} < $line->{'info'}->{'time'}) {
     api_call(GET => 'channels.mark'
       channel => get_chanid($channel),
       ts      => $line->{'info'}{'time'});
-    $last_mark_updated{$channel} = $line->{info}->{time};
+    $last_mark_updated{$channel} = $line->{'info'}->{'time'};
   }
 }
 
@@ -237,9 +237,9 @@ sub sig_message_public {
   my ($server, $msg, $nick, $address, $target) = @_;
 
   my $window = Irssi::active_win();
-  if($window->{active}->{type} eq 'CHANNEL' &&
-      $window->{active}->{name} eq $target &&
-      $window->{bottom}) {
+  if($window->{'active'}->{'type'} eq 'CHANNEL' &&
+      $window->{'active'}->{'name'} eq $target &&
+      $window->{'bottom'}) {
     update_slack_mark($window);
   }
 }
@@ -256,7 +256,7 @@ sub cmd_mark {
     }
 
     foreach my $window (@windows) {
-      if($window->{name} eq $name) {
+      if($window->{'name'} eq $name) {
         push(@mark_windows, $window);
       }
     }
