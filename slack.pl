@@ -31,8 +31,7 @@
 #  - the number of lines to grab from channel history
 # 
 
-use strict;
-use feature 'state';
+use 5.14;
 
 use Irssi;
 use Irssi::TextUI;
@@ -168,15 +167,15 @@ sub get_chanlog {
   my $users = get_users();
 
   my $count = Irssi::settings_get_int($IRSSI{'name'} . '_loglines');
-  $channel->{name} =~ s/^#//;
+  my $channel_name = $channel->{'name'} =~ s/^#//r;
 
   my $resp = api_call(GET => 'channels.history'
-    channel => get_chanid($channel->{'name'}, 0, 0),
+    channel => get_chanid($channel_name, 0, 0),
     count   => $count);
 
   if (!$resp->{ok}) {
     # First try failed, so maybe this chan is actually a private group
-    Irssi::print($channel->{name}. " appears to be a private group");
+    Irssi::print($channel_name. " appears to be a private group");
     $resp = api_call(GET => 'groups.history',
       channel => $groupid,
       count   => $count);
