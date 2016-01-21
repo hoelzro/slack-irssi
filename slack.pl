@@ -32,6 +32,7 @@
 # 
 
 use strict;
+use feature 'state';
 
 use Irssi;
 use Irssi::TextUI;
@@ -91,8 +92,6 @@ sub sig_server_conn {
 
   return unless is_slack_server($server);
   Irssi::signal_add('channel joined', 'get_chanlog');
-
-  get_users();
 }
 
 sub sig_server_disc {
@@ -103,22 +102,26 @@ sub sig_server_disc {
   Irssi::signal_remove('channel joined', 'get_chanlog');
 }
 
-my %USERS;
-my $LAST_USERS_UPDATE;
 sub get_users {
+  state $users_cache;
+  state $last_users_update = 0;
+
   return unless Irssi::settings_get_str($IRSSI{'name'} . '_token');
 
-  if (($LAST_USERS_UPDATE + 4 * 60 * 60) < time()) {
+  if(($last_users_update + 4 * 60 * 60) < time()) {
     my $resp = api_call(GET => 'users.list');
 
-    if ($resp->{ok}) {
-      my $slack_users = $resp->{members};
-      foreach my $u (@{$slack_users}) {
-        $USERS{$u->{id}} = $u->{name};
+    if($resp->{'ok'}) {
+      $users_cache = {};
+      my $slack_users = $resp->{'members'};
+      foreach my $user (@$slack_users) {
+        $users_cache->{ $u->{'id'} } = $u->{'name'};
       }
-      $LAST_USERS_UPDATE = time();
+      $last_users_update = time();
     }
   }
+
+  return $users_cache;
 }
 
 my %CHANNELS;
@@ -158,7 +161,7 @@ sub get_chanlog {
 
   return unless is_slack_server($channel->{'server'});
 
-  get_users();
+  my $users = get_users();
 
   my $count = Irssi::settings_get_int($IRSSI{'name'} . '_loglines');
   $channel->{name} =~ s/^#//;
@@ -187,7 +190,7 @@ sub get_chanlog {
           next;
         }
         my $ts = strftime('%H:%M', localtime $m->{ts});
-        $channel->printformat(MSGLEVEL_PUBLIC, "slackmsg", $USERS{$m->{user}}, $m->{text}, "+", $ts);
+        $channel->printformat(MSGLEVEL_PUBLIC, 'slackmsg', $users->{$m->{'user'}}, $m->{'text'}, '+', $ts);
       }
     }
   }
