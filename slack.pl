@@ -135,20 +135,20 @@ sub get_chanid {
   my $cache_ref       = \$channel_cache;
   my $last_update_ref = \$last_channels_update;
 
-  my $ressource = 'channels';
+  my $resource = 'channels';
   if($is_private) {
-    $ressource       = 'groups';
+    $resource       = 'groups';
     $cache_ref       = \$groups_cache;
     $last_update_ref = \$last_groups_update;
   }
 
   if($force || !exists(${$$cache_ref}{$channame}) || (($$last_update_ref + 4 * 60 * 60) < time())) {
-    my $resp = api_call(GET => "$ressource.list",
+    my $resp = api_call(GET => "$resource.list",
       exclude_archived => 1);
 
     if($resp->{'ok'}) {
       my $cache = {};
-      foreach my $channel (@{ $resp->{$ressource} }) {
+      foreach my $channel (@{ $resp->{$resource} }) {
         $cache->{ $channel->{'name'} } = $channel->{'id'};
       }
       $$last_update_ref = time();
