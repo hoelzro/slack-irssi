@@ -42,18 +42,18 @@ use LWP::UserAgent;
 use Mozilla::CA;
 use POSIX qw(strftime);
 
-our $VERSION = "0.1.1";
+our $VERSION = '0.1.1';
 our %IRSSI = (
-    authors => "Ted \'tedski\' Strzalkowski",
-    contact => "contact\@tedski.net",
-    name  => "slack",
-    description => "Add functionality when connected to the Slack IRC Gateway.",
-    license => "GPL",
-    url   => "https://github.com/tedski/slack-irssi/",
-    changed => "Wed, 13 Aug 2014 03:12:04 +0000"
+    authors => q{Ted 'tedski' Strzalkowski},
+    contact => 'contact@tedski.net',
+    name  => 'slack',
+    description => 'Add functionality when connected to the Slack IRC Gateway.',
+    license => 'GPL',
+    url   => 'https://github.com/tedski/slack-irssi/',
+    changed => 'Wed, 13 Aug 2014 03:12:04 +0000'
 );
 
-my $baseurl = "https://slack.com/api/";
+my $baseurl = 'https://slack.com/api/';
 
 my $ua = LWP::UserAgent->new;
 $ua->agent("$IRSSI{name} irssi/$VERSION");
@@ -176,7 +176,7 @@ sub get_chanlog {
 
   if(!$resp->{ok}) {
     # First try failed, so maybe this chan is actually a private group
-    Irssi::print($channel_name. " appears to be a private group");
+    Irssi::print("$channel_name appears to be a private group");
     $resp = api_call(GET => 'groups.history',
       channel => $groupid,
       count   => $count);
