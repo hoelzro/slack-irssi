@@ -44,13 +44,13 @@ use POSIX qw(strftime);
 
 our $VERSION = '0.1.1';
 our %IRSSI = (
-    authors => q{Ted 'tedski' Strzalkowski},
-    contact => 'contact@tedski.net',
-    name  => 'slack',
+    authors     => q{Ted 'tedski' Strzalkowski},
+    contact     => 'contact@tedski.net',
+    name        => 'slack',
     description => 'Add functionality when connected to the Slack IRC Gateway.',
-    license => 'GPL',
-    url   => 'https://github.com/tedski/slack-irssi/',
-    changed => 'Wed, 13 Aug 2014 03:12:04 +0000'
+    license     => 'GPL',
+    url         => 'https://github.com/tedski/slack-irssi/',
+    changed     => 'Wed, 13 Aug 2014 03:12:04 +0000'
 );
 
 my $baseurl = 'https://slack.com/api/';
@@ -69,13 +69,14 @@ sub is_slack_server {
 sub api_call {
   my ( $http_method, $api_method, %params ) = @_;
 
-  my $uri = URI->new($baseurl . $api_method);
+  my $uri   = URI->new($baseurl . $api_method);
   my $token = Irssi::settings_get_str($IRSSI{'name'} . '_token');
   $url->query_form($url->query_form, %params, token => $token);
 
-  my $req = HTTP::Request->new($http_method, $url);
-  my $resp = $ua->request($req);
+  my $req     = HTTP::Request->new($http_method, $url);
+  my $resp    = $ua->request($req);
   my $payload = from_json($resp->decoded_content);
+
   if($resp->is_success) {
     if(! $payload->{'ok'}) {
       Irssi::print("The Slack API returned the following error: $payload->{'error'}", MSGLEVEL_CLIENTERROR);
@@ -113,6 +114,7 @@ sub get_users {
 
     if($resp->{'ok'}) {
       $users_cache = {};
+
       my $slack_users = $resp->{'members'};
       foreach my $user (@$slack_users) {
         $users_cache->{ $u->{'id'} } = $u->{'name'};
@@ -128,7 +130,7 @@ sub get_chanid {
   state $channel_cache;
   state $groups_cache;
   state $last_channels_update = 0;
-  state $last_groups_update = 0;
+  state $last_groups_update   = 0;
 
   my ( $channame, $is_private, $force ) = @_;
 
@@ -137,7 +139,7 @@ sub get_chanid {
 
   my $resource = 'channels';
   if($is_private) {
-    $resource       = 'groups';
+    $resource        = 'groups';
     $cache_ref       = \$groups_cache;
     $last_update_ref = \$last_groups_update;
   }
@@ -167,7 +169,7 @@ sub get_chanlog {
 
   my $users = get_users();
 
-  my $count = Irssi::settings_get_int($IRSSI{'name'} . '_loglines');
+  my $count        = Irssi::settings_get_int($IRSSI{'name'} . '_loglines');
   my $channel_name = $channel->{'name'} =~ s/^#//r;
 
   my $resp = api_call(GET => 'channels.history'
@@ -210,8 +212,8 @@ sub update_slack_mark {
   return unless Irssi::settings_get_str($IRSSI{'name'} . '_token');
 
   # Leave $line set to the final visible line, not the one after.
-  my $view = $window->view();
-  my $line = $view->{'startline'};
+  my $view  = $window->view();
+  my $line  = $view->{'startline'};
   my $count = $view->get_line_cache($line)->{'count'};
   while($count < $view->{'height'} && $line->next) {
     $line = $line->next;
