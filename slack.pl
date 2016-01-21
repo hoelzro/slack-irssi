@@ -199,8 +199,9 @@ sub get_chanlog {
   }
 }
 
-my %LAST_MARK_UPDATED;
 sub update_slack_mark {
+  state %last_mark_updated;
+
   my ($window) = @_;
 
   return unless ($window->{active}->{type} eq 'CHANNEL' &&
@@ -218,11 +219,11 @@ sub update_slack_mark {
 
   # Only update the Slack mark if the most recent visible line is newer.
   my($channel) = $window->{active}->{name} =~ /^#(.*)/;
-  if ($LAST_MARK_UPDATED{$channel} < $line->{info}->{time}) {
+  if ($last_mark_updated{$channel} < $line->{info}->{time}) {
     api_call(GET => 'channels.mark'
       channel => get_chanid($channel),
       ts      => $line->{'info'}{'time'});
-    $LAST_MARK_UPDATED{$channel} = $line->{info}->{time};
+    $last_mark_updated{$channel} = $line->{info}->{time};
   }
 }
 
