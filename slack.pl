@@ -40,7 +40,8 @@ use URI;
 use LWP::UserAgent;
 use Mozilla::CA;
 use POSIX qw(strftime);
-use vars qw($VERSION %IRSSI $token $servertag $forked);
+
+our $servertag;
 
 our $VERSION = "0.1.1";
 our %IRSSI = (
@@ -77,7 +78,7 @@ sub api_call {
   $ua->timeout(3);
   $ua->env_proxy;
 
-  $token = Irssi::settings_get_str($IRSSI{'name'} . '_token');
+  my $token = Irssi::settings_get_str($IRSSI{'name'} . '_token');
   $url->query_form($url->query_form, 'token' => $token);
 
   $resp = $ua->$method($url);
