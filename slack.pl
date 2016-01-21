@@ -187,8 +187,8 @@ sub get_chanlog {
     foreach my $m (reverse(@{$msgs})) {
       if($m->{'type'} eq 'message') {
         if($m->{'subtype'} eq 'message_changed') {
-          $m->{'text'} = $m->{'message'}->{'text'};
-          $m->{'user'} = $m->{'message'}->{'user'};
+          $m->{'text'} = $m->{'message'}{'text'};
+          $m->{'user'} = $m->{'message'}{'user'};
         }
         elsif($m->{'subtype'}) {
           next;
@@ -205,7 +205,7 @@ sub update_slack_mark {
 
   my ( $window ) = @_;
 
-  return unless($window->{'active'}->{'type'} eq 'CHANNEL' &&
+  return unless($window->{'active'}{'type'} eq 'CHANNEL' &&
                  is_slack_server($window->{'active_server'}));
   return unless Irssi::settings_get_str($IRSSI{'name'} . '_token');
 
@@ -219,12 +219,12 @@ sub update_slack_mark {
   }
 
   # Only update the Slack mark if the most recent visible line is newer.
-  my ( $channel ) = $window->{'active'}->{'name'} =~ /^#(.*)/;
-  if($last_mark_updated{$channel} < $line->{'info'}->{'time'}) {
+  my ( $channel ) = $window->{'active'}{'name'} =~ /^#(.*)/;
+  if($last_mark_updated{$channel} < $line->{'info'}{'time'}) {
     api_call(GET => 'channels.mark'
       channel => get_chanid($channel),
       ts      => $line->{'info'}{'time'});
-    $last_mark_updated{$channel} = $line->{'info'}->{'time'};
+    $last_mark_updated{$channel} = $line->{'info'}{'time'};
   }
 }
 
@@ -237,8 +237,8 @@ sub sig_message_public {
   my ( $server, $msg, $nick, $address, $target ) = @_;
 
   my $window = Irssi::active_win();
-  if($window->{'active'}->{'type'} eq 'CHANNEL' &&
-      $window->{'active'}->{'name'} eq $target &&
+  if($window->{'active'}{'type'} eq 'CHANNEL' &&
+      $window->{'active'}{'name'} eq $target &&
       $window->{'bottom'}) {
     update_slack_mark($window);
   }
