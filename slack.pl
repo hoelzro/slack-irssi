@@ -31,7 +31,7 @@
 #  - the number of lines to grab from channel history
 #
 
-use 5.14;
+use v5.14.0;
 use warnings;
 
 use Irssi;
