@@ -162,6 +162,18 @@ sub get_chanid {
   return ${$$cache_ref}{$channame};
 }
 
+sub is_channel {
+  my ( $name ) = @_;
+
+  return 1;
+}
+
+sub is_private_group {
+  my ( $name ) = @_;
+
+  return 0;
+}
+
 sub get_channel_history {
   my ( $channel_name, $count ) = @_;
 
