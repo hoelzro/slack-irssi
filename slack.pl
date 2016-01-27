@@ -71,9 +71,9 @@ sub api_call {
 
   my $uri   = URI->new($baseurl . $api_method);
   my $token = Irssi::settings_get_str($IRSSI{'name'} . '_token');
-  $url->query_form($url->query_form, %params, token => $token);
+  $uri->query_form($uri->query_form, %params, token => $token);
 
-  my $req     = HTTP::Request->new($http_method, $url);
+  my $req     = HTTP::Request->new($http_method, $uri);
   my $resp    = $ua->request($req);
   my $payload = from_json($resp->decoded_content);
 
@@ -117,7 +117,7 @@ sub get_users {
 
       my $slack_users = $resp->{'members'};
       foreach my $user (@$slack_users) {
-        $users_cache->{ $u->{'id'} } = $u->{'name'};
+        $users_cache->{ $user->{'id'} } = $user->{'name'};
       }
       $last_users_update = time();
     }
@@ -155,7 +155,7 @@ sub get_chanid {
       }
       $$last_update_ref = time();
 
-      $$ccache_ref = $cache;
+      $$cache_ref = $cache;
     }
   }
 
@@ -165,7 +165,7 @@ sub get_chanid {
 sub get_channel_history {
   my ( $channel_name, $count ) = @_;
 
-  my $resp = api_call(GET => 'channels.history'
+  my $resp = api_call(GET => 'channels.history',
     channel => get_chanid($channel_name, 0, 0),
     count   => $count);
 
@@ -189,11 +189,13 @@ sub get_im_history {
 
   # XXX find direct message ID (D...) given username ($channel_name)
 
+=pod
   my $resp = api_call(GET => 'im.history',
     channel => $user_id,
     count   => $count);
 
   return $resp->{'ok'} ? $resp->{'messages'} : undef;
+=cut
 }
 
 sub get_chanlog {
@@ -223,9 +225,9 @@ sub get_chanlog {
 
     my ( $text, $user );
 
-    if($m->{'subtype'} eq 'message_changed') {
+    if($message->{'subtype'} eq 'message_changed') {
       ( $text, $user ) = @{ $message->{'message'} }{qw/text user/};
-    } elsif(!$m->{'subtype'}) {
+    } elsif(!$message->{'subtype'}) {
       ( $text, $user ) = @{$message}{qw/text user/};
     }
 
@@ -233,6 +235,7 @@ sub get_chanlog {
 
     my $ts = strftime('%H:%M', localtime $message->{'ts'});
     $channel->printformat(MSGLEVEL_PUBLIC, 'slackmsg', $user, $text, '+', $ts);
+  }
 }
 
 sub update_slack_mark {
@@ -256,7 +259,7 @@ sub update_slack_mark {
   # Only update the Slack mark if the most recent visible line is newer.
   my ( $channel ) = $window->{'active'}{'name'} =~ /^#(.*)/;
   if($last_mark_updated{$channel} < $line->{'info'}{'time'}) {
-    api_call(GET => 'channels.mark'
+    api_call(GET => 'channels.mark',
       channel => get_chanid($channel),
       ts      => $line->{'info'}{'time'});
     $last_mark_updated{$channel} = $line->{'info'}{'time'};
@@ -282,7 +285,7 @@ sub sig_message_public {
 sub cmd_mark {
   my ( $mark_windows ) = @_;
 
-  my %mark_me = map { $_ => undef } split /\s+/ $mark_windows;
+  my %mark_me = map { $_ => undef } split /\s+/, $mark_windows;
 
   if(exists $mark_me{'ACTIVE'}) {
     $mark_me{'ACTIVE'} = Irssi::active_win();
