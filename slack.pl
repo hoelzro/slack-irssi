@@ -237,7 +237,7 @@ sub get_chanlog {
 
     my ( $text, $user );
 
-    if($message->{'subtype'} eq 'message_changed') {
+    if(($message->{'subtype'} // '') eq 'message_changed') {
       ( $text, $user ) = @{ $message->{'message'} }{qw/text user/};
     } elsif(!$message->{'subtype'}) {
       ( $text, $user ) = @{$message}{qw/text user/};
