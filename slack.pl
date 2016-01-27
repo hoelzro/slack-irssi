@@ -126,59 +126,55 @@ sub get_users {
   return $users_cache;
 }
 
-sub get_chanid {
-  state $channel_cache;
-  state $groups_cache;
-  state $last_channels_update = 0;
-  state $last_groups_update   = 0;
+sub make_getter {
+  my ( $resource ) = @_;
 
-  my ( $channame, $is_private, $force ) = @_;
+  return sub {
+    state $cache;
+    state $last_update = 0;
 
-  my $cache_ref       = \$channel_cache;
-  my $last_update_ref = \$last_channels_update;
+    my ( $name ) = @_;
 
-  my $resource = 'channels';
-  if($is_private) {
-    $resource        = 'groups';
-    $cache_ref       = \$groups_cache;
-    $last_update_ref = \$last_groups_update;
-  }
+    if(!exists($cache->{$name}) || (($last_update + 4 * 60 * 60) < time())) {
+      my $resp = api_call(GET => "$resource.list",
+        exclude_archived => 1);
 
-  if($force || !exists(${$$cache_ref}{$channame}) || (($$last_update_ref + 4 * 60 * 60) < time())) {
-    my $resp = api_call(GET => "$resource.list",
-      exclude_archived => 1);
+      if($resp->{'ok'}) {
+        $cache = {};
 
-    if($resp->{'ok'}) {
-      my $cache = {};
-      foreach my $channel (@{ $resp->{$resource} }) {
-        $cache->{ $channel->{'name'} } = $channel->{'id'};
+        foreach my $entity (@{ $resp->{$resource} }) {
+          $cache->{ $entity->{'name'} } = $entity->{'id'};
+        }
+        $last_update = time();
       }
-      $$last_update_ref = time();
-
-      $$cache_ref = $cache;
     }
-  }
 
-  return ${$$cache_ref}{$channame};
+    return $cache->{$name};
+  };
+}
+
+BEGIN {
+  *get_channel_id = make_getter('channels');
+  *get_group_id = make_getter('groups');
 }
 
 sub is_channel {
   my ( $name ) = @_;
 
-  return 1;
+  return defined(get_channel_id($name));
 }
 
 sub is_private_group {
   my ( $name ) = @_;
 
-  return 0;
+  return defined(get_group_id($name));
 }
 
 sub get_channel_history {
   my ( $channel_name, $count ) = @_;
 
   my $resp = api_call(GET => 'channels.history',
-    channel => get_chanid($channel_name, 0, 0),
+    channel => get_channel_id($channel_name),
     count   => $count);
 
   return $resp->{'ok'} ? $resp->{'messages'} : undef;
@@ -188,7 +184,7 @@ sub get_group_history {
   my ( $channel_name, $count ) = @_;
 
   my $resp = api_call(GET => 'groups.history',
-    channel => get_chanid($channel_name, 1, 0),
+    channel => get_group_id($channel_name),
     count   => $count);
 
   return $resp->{'ok'} ? $resp->{'messages'} : undef;
@@ -274,7 +270,7 @@ sub update_slack_mark {
   my ( $channel ) = $window->{'active'}{'name'} =~ /^#(.*)/;
   if($last_mark_updated{$channel} < $line->{'info'}{'time'}) {
     api_call(GET => 'channels.mark',
-      channel => get_chanid($channel),
+      channel => get_channel_id($channel),
       ts      => $line->{'info'}{'time'});
     $last_mark_updated{$channel} = $line->{'info'}{'time'};
   }
