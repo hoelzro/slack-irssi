@@ -241,6 +241,8 @@ sub get_chanlog {
       ( $text, $user ) = @{ $message->{'message'} }{qw/text user/};
     } elsif(!$message->{'subtype'}) {
       ( $text, $user ) = @{$message}{qw/text user/};
+    } else {
+      next;
     }
 
     $user = $users->{$user};
