@@ -253,7 +253,7 @@ sub update_slack_mark {
 
   my ( $window ) = @_;
 
-  return unless($window->{'active'}{'type'} eq 'CHANNEL' &&
+  return unless(($window->{'active'}{'type'} // '') eq 'CHANNEL' &&
                  is_slack_server($window->{'active_server'}));
   return unless Irssi::settings_get_str($IRSSI{'name'} . '_token');
 
