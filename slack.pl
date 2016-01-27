@@ -268,7 +268,7 @@ sub update_slack_mark {
 
   # Only update the Slack mark if the most recent visible line is newer.
   my ( $channel ) = $window->{'active'}{'name'} =~ /^#(.*)/;
-  if($last_mark_updated{$channel} < $line->{'info'}{'time'}) {
+  if(($last_mark_updated{$channel} // 0) < $line->{'info'}{'time'}) {
     api_call(GET => 'channels.mark',
       channel => get_channel_id($channel),
       ts      => $line->{'info'}{'time'});
